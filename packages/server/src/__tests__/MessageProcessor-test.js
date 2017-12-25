@@ -10,6 +10,7 @@
 
 import {expect} from 'chai';
 import {Position, Range} from 'graphql-language-service-utils';
+import {SymbolKind} from 'vscode-languageserver-types';
 import {beforeEach, describe, it} from 'mocha';
 
 import {MessageProcessor} from '../MessageProcessor';
@@ -50,6 +51,19 @@ describe('MessageProcessor', () => {
       },
       getDiagnostics: (query, uri) => {
         return [];
+      },
+      getOutline: query => {
+        return {
+          outlineTrees: [
+            {
+              representativeName: 'item',
+              kind: 'Field',
+              startPosition: {line: 1, character: 2},
+              endPosition: {line: 1, character: 4},
+              children: [],
+            },
+          ],
+        };
       },
     };
   });
@@ -163,5 +177,40 @@ describe('MessageProcessor', () => {
 
     const result = await messageProcessor.handleDefinitionRequest(test);
     expect(result[0].uri).to.equal(`file://${queryDir}/testFragment.graphql`);
+  });
+
+  it('runs document symbol requests', async () => {
+    const validQuery = `
+  {
+    hero(episode: EMPIRE){
+      ...testFragment
+    }
+  }
+  `;
+
+    const newDocument = {
+      textDocument: {
+        text: validQuery,
+        uri: `${queryDir}/test3.graphql`,
+        version: 0,
+      },
+    };
+
+    await messageProcessor.handleDidOpenOrSaveNotification(newDocument);
+
+    const test = {
+      textDocument: newDocument.textDocument,
+    };
+
+    const result = await messageProcessor.handleDocumentSymbolRequest(test);
+
+    expect(result).to.not.be.undefined;
+    expect(result.length).to.equal(1);
+    expect(result[0].name).to.equal('item');
+    expect(result[0].kind).to.equal(SymbolKind.Field);
+    expect(result[0].location.range).to.deep.equal({
+      start: {line: 1, character: 2},
+      end: {line: 1, character: 4},
+    });
   });
 });
