@@ -35,6 +35,9 @@ import {
   InitializeResult,
   Location,
   PublishDiagnosticsParams,
+  DocumentSymbolParams,
+  SymbolInformation,
+  SymbolKind,
 } from 'vscode-languageserver';
 
 import {getGraphQLCache} from './GraphQLCache';
@@ -46,6 +49,13 @@ import {Logger} from './Logger';
 type CachedDocumentType = {
   version: number,
   contents: Array<CachedContent>,
+};
+
+const KIND_TO_SYMBOL_KIND = {
+  Field: SymbolKind.Field,
+  OperationDefinition: SymbolKind.Class,
+  FragmentDefinition: SymbolKind.Class,
+  FragmentSpread: SymbolKind.Struct,
 };
 
 export class MessageProcessor {
@@ -79,6 +89,7 @@ export class MessageProcessor {
     const serverCapabilities: ServerCapabilities = {
       capabilities: {
         completionProvider: {resolveProvider: true},
+        documentSymbolProvider: true,
         definitionProvider: true,
         textDocumentSync: 1,
       },
@@ -414,6 +425,52 @@ export class MessageProcessor {
       }),
     );
     return formatted;
+  }
+
+  async handleDocumentSymbolRequest(
+    params: DocumentSymbolParams.type,
+  ): Promise<Array<SymbolInformation>> {
+    if (!this._isInitialized) {
+      return [];
+    }
+
+    if (!params || !params.textDocument) {
+      throw new Error('`textDocument` argument is required.');
+    }
+
+    const textDocument = params.textDocument;
+    const cachedDocument = this._getCachedDocument(textDocument.uri);
+    if (!cachedDocument) {
+      throw new Error('A cached document cannot be found.');
+    }
+
+    const outline = await this._languageService.getOutline(
+      cachedDocument.contents[0].query,
+    );
+    if (!outline) {
+      return [];
+    }
+
+    const output: Array<SymbolInformation> = [];
+    const input = outline.outlineTrees.map(tree => [null, tree]);
+    while (input.length > 0) {
+      const [parent, tree] = input.pop();
+      output.push({
+        name: tree.representativeName,
+        kind: KIND_TO_SYMBOL_KIND[tree.kind],
+        location: {
+          uri: textDocument.uri,
+          range: {
+            start: tree.startPosition,
+            end: tree.endPosition,
+          },
+        },
+        containerName: parent ? parent.representativeName : undefined,
+      });
+      input.push(...tree.children.map(child => [tree, child]));
+    }
+
+    return output;
   }
 
   _isRelayCompatMode(query: string): boolean {

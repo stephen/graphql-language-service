@@ -259,6 +259,7 @@ export type OutlineTree = {
   tokenizedText?: TokenizedText,
   representativeName?: string,
 
+  kind: string,
   startPosition: Position,
   endPosition?: Position,
   children: Array<OutlineTree>,

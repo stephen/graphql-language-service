@@ -34,6 +34,7 @@ import {
   ExitNotification,
   InitializeRequest,
   PublishDiagnosticsNotification,
+  DocumentSymbolRequest,
   ShutdownRequest,
 } from 'vscode-languageserver';
 
@@ -167,5 +168,8 @@ function addHandlers(
   connection.onRequest(CompletionResolveRequest.type, item => item);
   connection.onRequest(DefinitionRequest.type, params =>
     messageProcessor.handleDefinitionRequest(params),
+  );
+  connection.onRequest(DocumentSymbolRequest.type, (params, token) =>
+    messageProcessor.handleDocumentSymbolRequest(params),
   );
 }

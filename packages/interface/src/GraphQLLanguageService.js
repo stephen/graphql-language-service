@@ -21,6 +21,7 @@ import type {
   GraphQLCache,
   GraphQLConfig,
   GraphQLProjectConfig,
+  Outline,
   Uri,
 } from 'graphql-language-service-types';
 import type {Position} from 'graphql-language-service-utils';
@@ -46,6 +47,7 @@ import {
   getDefinitionQueryResultForFragmentSpread,
   getDefinitionQueryResultForDefinitionNode,
 } from './getDefinition';
+import {getOutline} from './getOutline';
 import {getASTNodeAtPosition} from 'graphql-language-service-utils';
 
 export class GraphQLLanguageService {
@@ -243,5 +245,9 @@ export class GraphQLLanguageService {
     );
 
     return result;
+  }
+
+  async getOutline(query: string): Promise<?Outline> {
+    return getOutline(query);
   }
 }
