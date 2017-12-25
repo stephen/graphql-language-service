@@ -116,6 +116,6 @@ For each transport, there is a slight difference in JSON message format, especia
 | -------------------:|------------------------------|-----------------------------------|
 | Diagnostics         | `getDiagnostics`             | `textDocument/publishDiagnostics` |
 | Autocompletion      | `getAutocompleteSuggestions` | `textDocument/completion`         |
-| Outline             | `getOutline`                 | Not supported yet                 |
+| Outline             | `getOutline`                 | `textDocument/documentSymbol`     |
 | Go-to definition    | `getDefinition`              | Not supported yet                 |
 | File Events         | Not supported yet            | `didOpen/didClose/didSave/didChange` events |
